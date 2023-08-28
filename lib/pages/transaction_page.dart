@@ -1,6 +1,9 @@
+// import 'dart:js_util';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:uangkoo/models/database.dart';
 
 class TransactionPage extends StatefulWidget {
   const TransactionPage({super.key});
@@ -10,12 +13,43 @@ class TransactionPage extends StatefulWidget {
 }
 
 class _TransactionPageState extends State<TransactionPage> {
+  final AppDb database = AppDb();
   bool isExpense = true;
+
+  late int type;
 
   List<String> list = ['Makan dan Jajan', 'Transportasi', 'Sedekah'];
   late String dropDownValue = list.first;
 
+  TextEditingController amountController= TextEditingController();
   TextEditingController dateController = TextEditingController();
+  TextEditingController detailController = TextEditingController();
+
+  Category? selectedCategory;
+
+  Future insert(int amount, DateTime date, String nameDetail, int categoryId) async {
+    DateTime now = DateTime.now();
+    final row = await database.into(database.transactions).insertReturning(TransactionsCompanion.insert(
+      name: nameDetail, 
+      category_id: categoryId, 
+      transaction_date: date, 
+      amount: amount, 
+      created_at: now, 
+      updated_at: now
+    ));
+    print("ini : " + row.toString());
+  }
+
+  Future<List<Category>> getAllCategory(int type) async {
+    return await database.getAllCategoryRepo(type);
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    type = 2;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +67,8 @@ class _TransactionPageState extends State<TransactionPage> {
                     onChanged: (bool value){
                       setState(() {
                         isExpense = value;
+                        type = (isExpense) ?   2 : 1;
+                        selectedCategory = null;
                       });
                     }, 
                     inactiveTrackColor: Colors.green[200], 
@@ -49,6 +85,7 @@ class _TransactionPageState extends State<TransactionPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextFormField(
+                  controller: amountController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     border: UnderlineInputBorder(),
@@ -65,26 +102,56 @@ class _TransactionPageState extends State<TransactionPage> {
                   style: GoogleFonts.montserrat(fontSize: 16),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: dropDownValue,
-                  icon: Icon(Icons.arrow_drop_down),
-                  items: list.map<DropdownMenuItem<String>>((String value){
-                    return DropdownMenuItem<String>(
-                      value: value, 
-                      child: Text(value)
+              FutureBuilder<List<Category>>(
+                future: getAllCategory(type), 
+                builder: (context, snapshot) {
+                  if(snapshot.connectionState == ConnectionState.waiting){
+                    return Center(
+                      child: CircularProgressIndicator(),
                     );
-                  }).toList(), 
-                  onChanged: (String? value){}
-                ),
+                  }else{
+                    if(snapshot.hasData){
+                      if(snapshot.data!.length > 0){
+                        selectedCategory = (selectedCategory == null)? snapshot.data!.first : selectedCategory;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: DropdownButton<Category>(
+                            isExpanded: true,
+                            value: (selectedCategory == null) ? snapshot.data!.first : selectedCategory ,
+                            icon: Icon(Icons.arrow_drop_down),
+                            items: snapshot.data!.map((Category item) {
+                              return DropdownMenuItem<Category>(
+                                value: item,
+                                child: Text(item.name),
+                              );
+                            }).toList() , 
+                            onChanged: (Category? value){
+                              setState(() {
+                                
+                                selectedCategory = value; 
+                              });
+                            }
+                          ),
+                        );
+                      }else{
+                        return Center(
+                          child: Text("No has data"),
+                        );  
+                      }
+                    }else{
+                      return Center(
+                        child: Text("No has data"),
+                      );
+                    }
+                  }
+                }
               ),
+              
 
               SizedBox(height: 25,),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
+                child: TextFormField(
                   readOnly: true,
                   controller: dateController,
                   decoration: InputDecoration(
@@ -105,12 +172,25 @@ class _TransactionPageState extends State<TransactionPage> {
                   },
                 ),
               ),
+              SizedBox(height: 10,),
 
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextFormField(
+                  controller: detailController,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: "Detail "
+                  ),
+                ),
+              ),
               SizedBox(height: 25,),
               Center(
                 child: ElevatedButton(
                   onPressed: (){
-              
+                    insert(int.parse(amountController.text), DateTime.parse(dateController.text), detailController.text, selectedCategory!.id);
+                    Navigator.pop(context, true);
+                   
                   }, 
                   child: Text("Save")
                 ),
