@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:uangkoo/models/database.dart';
 import 'package:uangkoo/models/transaction_with_category.dart';
+import 'package:uangkoo/pages/transaction_page.dart';
 
 class HomePage extends StatefulWidget {
   final DateTime selectedDate;
@@ -132,17 +133,37 @@ class _HomePageState extends State<HomePage> {
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.delete),
+                                      IconButton(icon : Icon(Icons.delete), onPressed:() async {
+                                        await database.deleteTransactionRepo(snapshot.data![index].transaction.id);
+                                        setState(() {
+                                          
+                                        });
+                                      },),
                                       SizedBox(
                                         width: 15,
                                       ),
-                                      Icon(Icons.edit),
+                                      IconButton(
+                                        icon : Icon(Icons.edit),
+                                        onPressed: (){
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context)=>TransactionPage(transactionWithCategory: snapshot.data![index],)
+                                            )
+                                          );
+                                        },
+                                      ),
                                     ]
                                   ),
                                   title: Text("Rp. "+ snapshot.data![index].transaction.amount.toString()),
                                   subtitle: Text(snapshot.data![index].category.name+" ("+ snapshot.data![index].transaction.name+")"),
                                   leading: Container(
-                                    child: Icon(
+                                    child: 
+                                    (snapshot.data![index].category.type == 2 )?
+                                    Icon(
+                                      Icons.upload,
+                                      color: Colors.red,
+                                    ):
+                                    Icon(
                                       Icons.download,
                                       color: Colors.green,
                                     ),

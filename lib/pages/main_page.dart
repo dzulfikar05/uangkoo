@@ -80,7 +80,7 @@ class _MainPageState extends State<MainPage> {
         visible: (currentIndex == 0) ? true : false,
         child: FloatingActionButton(
           onPressed: (){
-            Navigator.of(context).push(MaterialPageRoute(builder: (context)=>TransactionPage())).then((value){
+            Navigator.of(context).push(MaterialPageRoute(builder: (context)=>TransactionPage( transactionWithCategory :  null))).then((value){
               setState(() {
                 
               });

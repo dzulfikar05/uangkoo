@@ -3,10 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl; 
 import 'package:uangkoo/models/database.dart';
+import 'package:uangkoo/models/transaction_with_category.dart';
 
 class TransactionPage extends StatefulWidget {
-  const TransactionPage({super.key});
+  final TransactionWithCategory?transactionWithCategory;
+
+  const TransactionPage({Key ? key, required this.transactionWithCategory}) : super(key: key);
 
   @override
   State<TransactionPage> createState() => _TransactionPageState();
@@ -44,11 +48,31 @@ class _TransactionPageState extends State<TransactionPage> {
     return await database.getAllCategoryRepo(type);
   }
 
+  Future update(int transactionId, int amount, int categoryId, DateTime transactionDate, String nameDetail )async{
+    return await database.updateTransactionRepo(transactionId, categoryId, amount, transactionDate, nameDetail);
+  }
+
   @override
   void initState() {
     // TODO: implement initState
-    type = 2;
+    if(widget.transactionWithCategory != null){
+      updateTransactionView(widget.transactionWithCategory!);
+    }else{
+      type = 2;
+
+    }
     super.initState();
+  }
+
+  void updateTransactionView(TransactionWithCategory transactionWithCategory){
+    amountController.text = transactionWithCategory.transaction.amount.toString();
+    detailController.text = transactionWithCategory.transaction.name;
+    dateController.text = intl.DateFormat('yyyy-MM-dd').format(
+      transactionWithCategory.transaction.transaction_date
+    );
+    type = transactionWithCategory.category.type;
+    (type == 2) ? isExpense = true : isExpense = false;
+    selectedCategory = transactionWithCategory.category;
   }
 
   @override
@@ -187,9 +211,22 @@ class _TransactionPageState extends State<TransactionPage> {
               SizedBox(height: 25,),
               Center(
                 child: ElevatedButton(
-                  onPressed: (){
-                    insert(int.parse(amountController.text), DateTime.parse(dateController.text), detailController.text, selectedCategory!.id);
+                  onPressed: () async{
+                    (widget.transactionWithCategory == null) ?
+                    
+                    insert(int.parse(amountController.text), DateTime.parse(dateController.text), detailController.text, selectedCategory!.id)
+                    : await update(widget.transactionWithCategory!.transaction.id, 
+                        int.parse(amountController.text), 
+                        selectedCategory!.id, 
+                        DateTime.parse(dateController.text), 
+                        detailController.text)
+                    ;
+                    setState(() {
+                      
+                    });
                     Navigator.pop(context, true);
+
+                     
                    
                   }, 
                   child: Text("Save")

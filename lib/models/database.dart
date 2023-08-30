@@ -49,6 +49,19 @@ class AppDb extends _$AppDb {
       }).toList();
     });
   }
+
+  Future updateTransactionRepo(int id, int amount, int category_id, DateTime transaction_date, String nameDetail) async {
+    return (update(transactions)..where((tbl) => tbl.id.equals(id) )).write(TransactionsCompanion(
+      name: Value(nameDetail),
+      amount: Value(amount),
+      category_id: Value(category_id,),
+      transaction_date: Value(transaction_date)
+    ));
+  }
+
+  Future deleteTransactionRepo(int id) async{
+    return (delete(transactions)..where((tbl) => tbl.id.equals(id))).go();
+  }
 }
 LazyDatabase _openConnection() {
   // the LazyDatabase util lets us find the right location for the file async.
@@ -61,3 +74,4 @@ LazyDatabase _openConnection() {
     return NativeDatabase.createInBackground(file);
   });
 }
+
